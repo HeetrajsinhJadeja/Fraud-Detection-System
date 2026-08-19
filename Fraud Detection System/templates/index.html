@@ -1,0 +1,379 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .fraud-card {
+            border-left: 5px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        .safe-card {
+            border-left: 5px solid #198754;
+            background-color: #d1e7dd;
+        }
+        .result-box {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            margin-bottom: 30px;
+        }
+        .demo-buttons {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+        }
+        .demo-buttons h5 {
+            margin-bottom: 10px;
+        }
+        @media (max-width: 767px) {
+            .form-container {
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .col-section {
+                margin-bottom: 20px;
+            }
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .navbar {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Fraud Detection System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Check Transaction</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logs">Transaction Logs</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header text-center">
+            <h1>Fraud Detection System</h1>
+            <p class="lead">Enter transaction details to check for potential fraud</p>
+        </div>
+        
+        <div class="demo-buttons">
+            <h5>Test Examples:</h5>
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <button class="btn btn-sm btn-danger" id="fraud-example">Load Fraudulent Example</button>
+                <button class="btn btn-sm btn-success" id="safe-example">Load Safe Example</button>
+                <button class="btn btn-sm btn-warning" id="suspicious-example">Load Suspicious Example</button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="form-container">
+                    <form id="transaction-form">
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <label for="step" class="form-label">Time Step</label>
+                                <input type="number" class="form-control" id="step" name="step" required min="0" value="1">
+                                <small class="text-muted">Time step in hours/days</small>
+                            </div>
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <label for="type" class="form-label">Transaction Type</label>
+                                <select class="form-select" id="type" name="type" required>
+                                    <option value="PAYMENT">PAYMENT</option>
+                                    <option value="TRANSFER">TRANSFER</option>
+                                    <option value="CASH_OUT">CASH_OUT</option>
+                                    <option value="DEBIT">DEBIT</option>
+                                    <option value="CASH_IN">CASH_IN</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="amount" class="form-label">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0" required value="1000.00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 col-section">
+                                <h5>Origin Account</h5>
+                                <div class="mb-3">
+                                    <label for="nameOrig" class="form-label">Account ID</label>
+                                    <input type="text" class="form-control" id="nameOrig" name="nameOrig" required value="C1234567890">
+                                    <small class="text-muted">C for client, M for merchant</small>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label for="oldbalanceOrg" class="form-label">Old Balance</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="oldbalanceOrg" name="oldbalanceOrg" step="0.01" min="0" required value="5000.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="newbalanceOrg" class="form-label">New Balance</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="newbalanceOrg" name="newbalanceOrg" step="0.01" min="0" required value="4000.00">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 col-section">
+                                <h5>Destination Account</h5>
+                                <div class="mb-3">
+                                    <label for="nameDest" class="form-label">Account ID</label>
+                                    <input type="text" class="form-control" id="nameDest" name="nameDest" required value="M0987654321">
+                                    <small class="text-muted">C for client, M for merchant</small>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label for="oldbalanceDest" class="form-label">Old Balance</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="oldbalanceDest" name="oldbalanceDest" step="0.01" min="0" required value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="newbalanceDest" class="form-label">New Balance</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="newbalanceDest" name="newbalanceDest" step="0.01" min="0" required value="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Check for Fraud</button>
+                        </div>
+                    </form>
+                    
+                    <div class="loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Analyzing transaction...</p>
+                    </div>
+                    
+                    <div id="result" class="result-box">
+                        <!-- Results will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Static test data
+            const testData = {
+                fraudExample: {
+                    step: 500,
+                    type: 'TRANSFER',
+                    amount: 10000.00,
+                    nameOrig: 'C8902341234',
+                    oldbalanceOrg: 12000.00,
+                    newbalanceOrg: 2000.00,
+                    nameDest: 'C5378195742',
+                    oldbalanceDest: 100.00,
+                    newbalanceDest: 10100.00
+                },
+                safeExample: {
+                    step: 20,
+                    type: 'PAYMENT',
+                    amount: 120.50,
+                    nameOrig: 'C2349871234',
+                    oldbalanceOrg: 5400.00,
+                    newbalanceOrg: 5279.50,
+                    nameDest: 'M1028374650',
+                    oldbalanceDest: 10000.00,
+                    newbalanceDest: 10120.50
+                },
+                suspiciousExample: {
+                    step: 350,
+                    type: 'CASH_OUT',
+                    amount: 7500.00,
+                    nameOrig: 'C9876543210',
+                    oldbalanceOrg: 8000.00,
+                    newbalanceOrg: 500.00,
+                    nameDest: 'C1357924680',
+                    oldbalanceDest: 0.00,
+                    newbalanceDest: 7500.00
+                }
+            };
+            
+            // Update new balance based on old balance and amount
+            function updateNewBalance() {
+                const oldBalance = parseFloat(document.getElementById('oldbalanceOrg').value) || 0;
+                const amount = parseFloat(document.getElementById('amount').value) || 0;
+                const newBalance = Math.max(0, oldBalance - amount).toFixed(2);
+                document.getElementById('newbalanceOrg').value = newBalance;
+            }
+            
+            // Fill form with test data
+            function fillFormWithTestData(data) {
+                document.getElementById('step').value = data.step;
+                document.getElementById('type').value = data.type;
+                document.getElementById('amount').value = data.amount.toFixed(2);
+                document.getElementById('nameOrig').value = data.nameOrig;
+                document.getElementById('oldbalanceOrg').value = data.oldbalanceOrg.toFixed(2);
+                document.getElementById('newbalanceOrg').value = data.newbalanceOrg.toFixed(2);
+                document.getElementById('nameDest').value = data.nameDest;
+                document.getElementById('oldbalanceDest').value = data.oldbalanceDest.toFixed(2);
+                document.getElementById('newbalanceDest').value = data.newbalanceDest.toFixed(2);
+            }
+            
+            // Add event listeners for test buttons
+            document.getElementById('fraud-example').addEventListener('click', function() {
+                fillFormWithTestData(testData.fraudExample);
+            });
+            
+            document.getElementById('safe-example').addEventListener('click', function() {
+                fillFormWithTestData(testData.safeExample);
+            });
+            
+            document.getElementById('suspicious-example').addEventListener('click', function() {
+                fillFormWithTestData(testData.suspiciousExample);
+            });
+            
+            // Add event listeners for balance calculation
+            document.getElementById('amount').addEventListener('input', updateNewBalance);
+            document.getElementById('oldbalanceOrg').addEventListener('input', updateNewBalance);
+            
+            // Handle form submission
+            document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading indicator
+                document.querySelector('.loading').style.display = 'block';
+                document.getElementById('result').style.display = 'none';
+                
+                // Get form data
+                const formData = new FormData(this);
+                
+                // Send data to API
+                fetch('/api/check_transaction', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    document.querySelector('.loading').style.display = 'none';
+                    
+                    // Display result
+                    const resultDiv = document.getElementById('result');
+                    const isFraud = data.is_fraud;
+                    const probability = data.fraud_probability;
+                    const transactionDetails = data.transaction_details;
+                    
+                    if (isFraud) {
+                        resultDiv.className = 'result-box fraud-card';
+                        resultDiv.innerHTML = `
+                            <h3 class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Potential Fraud Detected!</h3>
+                            <p class="lead">This transaction has been flagged as potentially fraudulent.</p>
+                            <p><strong>Fraud Probability:</strong> ${(probability * 100).toFixed(1)}%</p>
+                            <div class="alert alert-danger">
+                                <strong>Warning:</strong> This transaction should be reviewed before processing.
+                            </div>
+                            <div class="mt-3">
+                                <h5>Transaction Details:</h5>
+                                <ul>
+                                    <li>Type: ${transactionDetails.type}</li>
+                                    <li>Amount: $${parseFloat(transactionDetails.amount).toFixed(2)}</li>
+                                    <li>Origin Account: ${transactionDetails.origin_account}</li>
+                                    <li>Destination Account: ${transactionDetails.destination_account}</li>
+                                </ul>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.className = 'result-box safe-card';
+                        resultDiv.innerHTML = `
+                            <h3 class="text-success"><i class="bi bi-check-circle-fill"></i> Transaction Appears Safe</h3>
+                            <p class="lead">No fraudulent activity detected in this transaction.</p>
+                            <p><strong>Fraud Probability:</strong> ${(probability * 100).toFixed(1)}%</p>
+                            <div class="alert alert-success">
+                                <strong>Good news!</strong> This transaction can be processed normally.
+                            </div>
+                            <div class="mt-3">
+                                <h5>Transaction Details:</h5>
+                                <ul>
+                                    <li>Type: ${transactionDetails.type}</li>
+                                    <li>Amount: $${parseFloat(transactionDetails.amount).toFixed(2)}</li>
+                                    <li>Origin Account: ${transactionDetails.origin_account}</li>
+                                    <li>Destination Account: ${transactionDetails.destination_account}</li>
+                                </ul>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    // Hide loading indicator
+                    document.querySelector('.loading').style.display = 'none';
+                    
+                    // Show error
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.className = 'result-box';
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    `;
+                    resultDiv.style.display = 'block';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

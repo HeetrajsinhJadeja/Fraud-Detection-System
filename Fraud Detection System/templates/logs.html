@@ -1,0 +1,356 @@
+<!-- templates/logs.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Logs - Fraud Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .header {
+            margin-bottom: 30px;
+        }
+        .logs-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .log-card {
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        .fraud-card {
+            border-left: 5px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        .safe-card {
+            border-left: 5px solid #198754;
+            background-color: #d1e7dd;
+        }
+        .fraud-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .fraud {
+            background-color: #dc3545;
+        }
+        .safe {
+            background-color: #198754;
+        }
+        .no-logs {
+            padding: 50px;
+            text-align: center;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .clear-logs {
+            margin-bottom: 20px;
+        }
+        .navbar {
+            margin-bottom: 20px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        @media (max-width: 767px) {
+            .logs-container {
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Fraud Detection System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Check Transaction</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/logs">Transaction Logs</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header text-center">
+            <h1>Transaction Logs</h1>
+            <p class="lead">History of all transactions analyzed by the system</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="clear-logs text-end">
+                    <button id="clear-logs" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Clear All Logs
+                    </button>
+                </div>
+                
+                <div class="logs-container">
+                    <div class="loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading transaction logs...</p>
+                    </div>
+                    
+                    <div id="logs-list">
+                        <!-- Logs will be displayed here -->
+                    </div>
+                    
+                    <div id="no-logs" class="no-logs">
+                        <i class="bi bi-card-list fs-1 text-muted"></i>
+                        <h3 class="mt-3 text-muted">No Transaction Logs</h3>
+                        <p class="text-muted">Check some transactions to see them appear here</p>
+                        <a href="/" class="btn btn-primary mt-3">Check a Transaction</a>
+                    </div>
+                </div>
+                
+                <!-- Generate sample logs for testing button -->
+                <div class="text-center mt-4">
+                    <button id="generate-samples" class="btn btn-secondary">
+                        <i class="bi bi-database-add"></i> Generate Sample Logs (For Testing)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logsListElement = document.getElementById('logs-list');
+            const noLogsElement = document.getElementById('no-logs');
+            const loadingElement = document.querySelector('.loading');
+            
+            // Function to fetch and display logs
+            function fetchAndDisplayLogs() {
+                // Show loading indicator
+                logsListElement.style.display = 'none';
+                noLogsElement.style.display = 'none';
+                loadingElement.style.display = 'block';
+                
+                fetch('/api/transaction_logs')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch logs');
+                        }
+                        return response.json();
+                    })
+                    .then(logs => {
+                        // Hide loading indicator
+                        loadingElement.style.display = 'none';
+                        
+                        if (logs.length === 0) {
+                            logsListElement.style.display = 'none';
+                            noLogsElement.style.display = 'block';
+                            return;
+                        }
+                        
+                        logsListElement.style.display = 'block';
+                        noLogsElement.style.display = 'none';
+                        
+                        // Sort logs by timestamp (newest first)
+                        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        
+                        logsListElement.innerHTML = '';
+                        
+                        logs.forEach((log) => {
+                            const cardClass = log.isFraud ? 'fraud-card' : 'safe-card';
+                            const statusClass = log.isFraud ? 'fraud' : 'safe';
+                            const statusText = log.isFraud ? 'Fraud Detected' : 'Safe Transaction';
+                            const date = new Date(log.timestamp);
+                            
+                            const logCard = document.createElement('div');
+                            logCard.className = `card ${cardClass} log-card`;
+                            logCard.innerHTML = `
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="card-title mb-0">
+                                            <span class="fraud-indicator ${statusClass}"></span>
+                                            ${statusText}
+                                        </h5>
+                                        <small class="text-muted">${date.toLocaleString()}</small>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Type:</strong> ${log.type}</p>
+                                            <p class="mb-1"><strong>Amount:</strong> $${log.amount.toFixed(2)}</p>
+                                            <p class="mb-1"><strong>Fraud Probability:</strong> ${(log.probability * 100).toFixed(1)}%</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>From:</strong> ${log.nameOrig}</p>
+                                            <p class="mb-1"><strong>To:</strong> ${log.nameDest}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            logsListElement.appendChild(logCard);
+                        });
+                    })
+                    .catch(error => {
+                        // Hide loading indicator
+                        loadingElement.style.display = 'none';
+                        
+                        // Show error
+                        logsListElement.style.display = 'block';
+                        noLogsElement.style.display = 'none';
+                        logsListElement.innerHTML = `
+                            <div class="alert alert-danger">
+                                <strong>Error:</strong> ${error.message}
+                            </div>
+                        `;
+                    });
+            }
+            
+            // Initialize logs display
+            fetchAndDisplayLogs();
+            
+            // Clear logs button
+            document.getElementById('clear-logs').addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all transaction logs?')) {
+                    fetch('/api/clear_logs', {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to clear logs');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Refresh logs display
+                        fetchAndDisplayLogs();
+                    })
+                    .catch(error => {
+                        alert('Error clearing logs: ' + error.message);
+                    });
+                }
+            });
+            
+            // Generate sample logs
+            document.getElementById('generate-samples').addEventListener('click', function() {
+                const sampleLogs = [
+                    {
+                        timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+                        type: 'PAYMENT',
+                        amount: 85.30,
+                        nameOrig: 'C5403926184',
+                        nameDest: 'M2968401573',
+                        isFraud: false,
+                        probability: 0.03
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 12 * 60000).toISOString(),
+                        type: 'TRANSFER',
+                        amount: 9500.00,
+                        nameOrig: 'C8276534901',
+                        nameDest: 'C1928374650',
+                        isFraud: true,
+                        probability: 0.89
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
+                        type: 'CASH_OUT',
+                        amount: 2300.00,
+                        nameOrig: 'C1048576290',
+                        nameDest: 'C3865103924',
+                        isFraud: false,
+                        probability: 0.12
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 90 * 60000).toISOString(),
+                        type: 'CASH_IN',
+                        amount: 1200.00,
+                        nameOrig: 'M8472659103',
+                        nameDest: 'C2048359671',
+                        isFraud: false,
+                        probability: 0.01
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 120 * 60000).toISOString(),
+                        type: 'DEBIT',
+                        amount: 345.67,
+                        nameOrig: 'C9173625480',
+                        nameDest: 'M5621783940',
+                        isFraud: false,
+                        probability: 0.04
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 180 * 60000).toISOString(),
+                        type: 'TRANSFER',
+                        amount: 4800.00,
+                        nameOrig: 'C6123498760',
+                        nameDest: 'C7856123490',
+                        isFraud: true,
+                        probability: 0.77
+                    }
+                ];
+                
+                // Add each sample log one by one
+                const logPromises = sampleLogs.map(log => {
+                    // Create form data for this log
+                    const formData = new FormData();
+                    formData.append('step', '1');
+                    formData.append('type', log.type);
+                    formData.append('amount', log.amount);
+                    formData.append('nameOrig', log.nameOrig);
+                    formData.append('oldbalanceOrformData.append');
+                    formData.append('newbalanceOrig', '5000.00');
+                    formData.append('nameDest', log.nameDest);
+                    formData.append('oldbalanceDest', '10000.00');
+                    formData.append('newbalanceDest', '10000.00');
+                    formData.append('isFraud', log.isFraud ? '1' : '0');
+                    formData.append('isFlaggedFraud', '0');
+                    formData.append('probability', log.probability.toString());
+                    formData.append('timestamp', log.timestamp);
+                    
+                    return fetch('/api/add_log', {
+                        method: 'POST',
+                        body: formData
+                    });
+                });
+                
+                Promise.all(logPromises)
+                    .then(() => {
+                        alert('Sample logs generated successfully!');
+                        fetchAndDisplayLogs();
+                    })
+                    .catch(error => {
+                        alert('Error generating sample logs: ' + error.message);
+                    });
+            });
+        });
+    </script>
+    
+    <footer class="footer mt-5 py-3">
+        <div class="container text-center">
+            <span class="text-muted">© 2023 Fraud Detection System. All rights reserved.</span>
+        </div>
+    </footer>
+</body>
+</html>
